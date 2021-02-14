@@ -1,0 +1,20 @@
+{
+  "name": "chatterona",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "http": "0.0.1-security",
+    "redis": "^3.0.2",
+    "websocket": "^1.0.31",
+    "nodemon": "^2.0.4"
+  }
+}
