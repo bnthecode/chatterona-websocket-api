@@ -1,8 +1,11 @@
 import http from "http";
 import ws from "websocket";
 import redis from "redis";
+import { v4 as uuid } from "uuid";
 const APPID = process.env.APPID;
 let channels = {};
+// when saving a connection save the index of the connections for fast deletion
+let indexMap = {};
 const WebSocketServer = ws.server;
 
 const subscriber = redis.createClient({
@@ -16,21 +19,24 @@ const publisher = redis.createClient({
 });
 
 subscriber.on("subscribe", function (cache) {
-  console.log(`Server ${APPID} subscribed successfully to ${cache}`);
+  console.log(
+    "\x1b[35m%s\x1b[0m",
+    `Server ${APPID} subscribed successfully to ${cache}`
+  );
 });
 
-subscriber.on("message", function (message) {
+subscriber.on("message", function (cache, message) {
   try {
     const { channelId } = JSON.parse(message);
     const channel = channels[channelId];
     const clients = channel ? channel.connectedClients : [];
-    clients.forEach((c) => c.send(APPID + ":" + message));
+    clients.forEach((c) => c.send(message));
   } catch (ex) {
     console.log("ERR::" + ex);
   }
 });
 
-subscriber.subscribe("message_cache");
+subscriber.subscribe("message-cache");
 
 const httpserver = http.createServer();
 
@@ -38,49 +44,78 @@ const websocket = new WebSocketServer({
   httpServer: httpserver,
 });
 
-httpserver.listen(5000, () =>
-  console.log("My server is listening on port 5000")
-);
+httpserver.listen(5000, () => {
+  console.log(
+    "\x1b[36m%s\x1b[0m",
+    `----- Chatterona websocket server #${APPID}  running on port`,
+    "5000",
+    "\x1b[36m",
+    "-----"
+  );
+});
 
-const getMessageType = (channelId, type) => {
+const getMessageType = (message, con) => {
+  const { channelId, message: updater, type } = JSON.parse(message.utf8Data);
   switch (type) {
     case "join-channel": {
+      console.log("\x1b[35m%s\x1b[0m", `joining channel ${channelId}`);
       return handleSocketJoinChannel(channelId, con);
     }
     case "send-message": {
-      return publisher.publish(message.utf8Data);
+      return publisher.publish("message-cache", message.utf8Data);
     }
     default: {
-      console.log("Oh man, what do we do now??");
+      console.log(
+        "\x1b[31m%s\x1b[0m",
+        `websocket server did not handle message event for ${channelId}`
+      );
     }
   }
-}
+};
 
 websocket.on("request", (request) => {
-  console.log("websocket recieved");
+  console.log("\x1b[33m%s\x1b[0m", `websocket initiated`);
 
   const con = request.accept(null, request.origin);
-  con.on("close", () => console.log("websocket closed"));
-
   con.on("message", (message) => {
-    const { channelId, type } = JSON.parse(message.utf8Data);
-    getMessageType(channelId, type);
+    getMessageType(message, con);
   });
   con.send(`Connected successfully to server ${APPID}`);
+  // need a way to clear open connections inside channel map
 });
 
 const handleSocketJoinChannel = (channelId, con) => {
   const channel = channels[channelId];
-  console.log(`joining channel ${channelId}`);
+  const currentConnectionLength = channel ? channel.connectedClients.length : 0;
+  const connectionId = uuid();
+
   channels = {
     ...channels,
     [channelId]: {
       ...(channel || {}),
-      connectedClients: [...(channel ? channel.connectedClients : []), con],
+      connectedClients: [...(channel ? channel.connectedClients : []), 
+        con,
+      ],
     },
   };
-};
+  // keep index of connection for easy deletion
+  indexMap = {
+    ...indexMap,
+    [connectionId] : currentConnectionLength
+  }
 
+  con.on("close", () => {
+    const removalIdx = indexMap[connectionId];
+    const foundConnection = channel.connectedClients[removalIdx];
+    foundConnection.close();
+    channel.connectedClients.splice(indexMap[connectionId]);
+  });
+
+  console.log(
+    "\x1b[35m%s\x1b[0m",
+    `adding to channel sockets --> ${channelId}`
+  );
+};
 
 // Client
 // const ws = new WebSocket('ws://localhost:5000');
