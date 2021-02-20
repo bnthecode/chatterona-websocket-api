@@ -36,6 +36,7 @@ class WebsocketRegistry {
 
       subscriber.subscribe("message-cache");
       subscriber.subscribe("existing-connections");
+      subscriber.subscribe("channel-typer");
     } catch (error) {
       console.log("error initializing websocket listeners", error.message);
     }
@@ -62,7 +63,7 @@ class WebsocketRegistry {
   handleIncomingWebsocketMessage = (message, connection) => {
     console.log(message)
     try {
-      const { channelId, type, offer, answer, candidate } = JSON.parse(
+      const { channelId, type } = JSON.parse(
         message.utf8Data
       );
    
@@ -83,38 +84,38 @@ class WebsocketRegistry {
           console.log("im adding myself into voice.., i have the channel id");
           return;
         }
-        case "candidate": {
-          console.log("candidate...", candidate);
-          connection.send(
-            JSON.stringify({
-              type: "candidate",
-              offer: offer,
-            })
-          );
-          return;
-        }
+        // case "candidate": {
+        //   console.log("candidate...", candidate);
+        //   connection.send(
+        //     JSON.stringify({
+        //       type: "candidate",
+        //       offer: offer,
+        //     })
+        //   );
+        //   return;
+        // }
 
-        case "create-offer": {
-          console.log("offer.....", offer);
-          connection.send(
-            JSON.stringify({
-              type: "create-offer",
-              offer: offer,
-            })
-          );
-          return;
-        }
+        // case "create-offer": {
+        //   console.log("offer.....", offer);
+        //   connection.send(
+        //     JSON.stringify({
+        //       type: "create-offer",
+        //       offer: offer,
+        //     })
+        //   );
+        //   return;
+        // }
 
-        case "create-answer": {
-          console.log("answer.....", answer);
-          connection.send(
-            JSON.stringify({
-              type: "create-answer",
-              answer: answer,
-            })
-          );
-          return;
-        }
+        // case "create-answer": {
+        //   console.log("answer.....", answer);
+        //   connection.send(
+        //     JSON.stringify({
+        //       type: "create-answer",
+        //       answer: answer,
+        //     })
+        //   );
+        //   return;
+        // }
 
         default: {
           console.log(
@@ -194,7 +195,7 @@ class WebsocketRegistry {
 
   handleWebsocketAddChannelTyper = (typer) => {
     try {
-      this.publisher.publish("channel-typers", typer);
+      this.publisher.publish("channel-typer", typer);
     } catch (error) {
       console.log("error sending message", error.message);
     }

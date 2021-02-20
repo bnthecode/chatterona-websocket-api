@@ -26,7 +26,7 @@ const wsServer = new WebSocketServer({
 try {
   const websocketRegistry = new WebsocketRegistry(wsServer);
   websocketRegistry.createContext(subscriber, publisher);
-  console.log('successfully initialized websocket registry....')
+  console.log('----------successfully initialized websocket registry-------------')
 } catch (error) {
   console.log('error initializing websocket registry..', error.message)
 }
