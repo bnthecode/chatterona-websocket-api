@@ -35,6 +35,7 @@ httpserver.listen(5000, () => {
   console.log(
     "\x1b[36m%s\x1b[0m",
     `----- Chatterona websocket server #${APPID}  running on port`,
+    'version---1',
     "5000",
     "\x1b[36m",
     "-----"

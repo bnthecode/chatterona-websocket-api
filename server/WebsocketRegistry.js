@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-
+const APPID = process.env.APPID;
 class WebsocketRegistry {
   constructor(server) {
     this.websocketServer = server;
@@ -61,7 +61,7 @@ class WebsocketRegistry {
   };
 
   handleIncomingWebsocketMessage = (message, connection) => {
-    console.log(message)
+    console.log(APPID, 'message')
     try {
       const { channelId, type } = JSON.parse(
         message.utf8Data
@@ -130,7 +130,6 @@ class WebsocketRegistry {
   };
 
   handleOutgoingWebsocketMessage = (message) => {
-    console.log("sending outgoing message");
     try {
       const { channelId } = JSON.parse(message);
       const channel = this.channels[channelId];
@@ -186,7 +185,7 @@ class WebsocketRegistry {
 
   handleWebsocketSendMessage = (message) => {
     try {
-      console.log("handling incoming message, of type message");
+      // console.log("handling incoming message, of type message");
       this.publisher.publish("message-cache", message);
     } catch (error) {
       console.log("error sending message", error.message);
